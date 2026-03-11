@@ -842,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('fecha')) $('fecha').valueAsDate = new Date();
   checkSetup();
   showTab(currentTab);
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   window.addEventListener('online', () => { updateNetworkStatus('En línea', 'ok'); syncPendingQueue(true); });
   window.addEventListener('offline', () => { updateNetworkStatus('Sin conexión', 'warn'); });
 });
