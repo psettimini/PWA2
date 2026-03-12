@@ -350,13 +350,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
   </div>
 
   <!-- ==================== DASHBOARD ==================== -->
-  
+  <div id="section-dashboard" class="hidden fade-in space-y-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-blue-600 to-blue-700 text-white"><p class="text-blue-100 text-xs">Mes Actual</p><h3 class="text-xl md:text-3xl font-bold" id="dash-mes-actual">$0</h3></div>
       <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"><p class="text-emerald-100 text-xs">Promedio Mensual</p><h3 class="text-xl md:text-3xl font-bold" id="dash-promedio">$0</h3></div>
       <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white"><p class="text-purple-100 text-xs">Gastos Fijos</p><h3 class="text-xl md:text-3xl font-bold" id="dash-fijos">0%</h3></div>
-      <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white"><p class="text-amber-100 text-xs">Movimientos del Mes</p><h3 class="text-xl md:text-3xl font-bold" id="dash-movimientos">0</h3></div>
-      <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white"><p class="text-cyan-100 text-xs">Ticket Promedio</p><h3 class="text-xl md:text-3xl font-bold" id="dash-ticket">$0</h3></div>
-    
+      <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white"><p class="text-amber-100 text-xs">Transacciones</p><h3 class="text-xl md:text-3xl font-bold" id="dash-count">0</h3></div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="glass-panel rounded-2xl p-6"><h3 class="font-bold mb-4">Evolución Mensual</h3><canvas id="chart-evolucion" height="250"></canvas></div>
       <div class="glass-panel rounded-2xl p-6"><h3 class="font-bold mb-4">Por Centro de Gasto</h3><canvas id="chart-centros" height="250"></canvas></div>
       <div class="glass-panel rounded-2xl p-6 lg:col-span-2">
@@ -439,7 +440,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
             <span class="font-medium" style="color:var(--text)">Versión de la app</span>
             <p class="text-xs" style="color:var(--text3)">Control visual de la versión publicada</p>
           </div>
-          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.2</span>
+          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.0</span>
         </div>
         <div class="flex items-center justify-between p-4 rounded-lg border" style="border-color:var(--border-solid);background:var(--kpi-bg)">
           <div><span class="font-medium" style="color:var(--text)">Modo oscuro</span><p class="text-xs" style="color:var(--text3)">Cambia la apariencia de la app</p></div>
@@ -837,7 +838,7 @@ function toggleDarkMode() {
   if (!$('section-comparar')?.classList.contains('hidden')) renderComparar();
 }
 
-const APP_VERSION = '1.0.2';
+const APP_VERSION = '1.0.0';
 
 /* ========================================
    INIT
@@ -1286,7 +1287,7 @@ function renderDashboard() {
   let total=0, fijos=0; const porMes=Object.create(null), porCentro=Object.create(null);
   const hoy = new Date();
   const mesActualKey = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
-  let totalMesActual = 0, movimientosMesActual = 0;
+  let totalMesActual = 0;
 
   for(const g of allData){
     const imp=safeNumber(g.Importe);
@@ -1294,21 +1295,16 @@ function renderDashboard() {
     if(g.Tipo==='F')fijos+=imp;
     const m=getMesKey(g.Fecha)||'?';
     porMes[m]=(porMes[m]||0)+imp;
-    if(m===mesActualKey){
-      totalMesActual+=imp;
-      movimientosMesActual++;
-    }
+    if(m===mesActualKey) totalMesActual+=imp;
     const c=g.Centro||'?';
     porCentro[c]=(porCentro[c]||0)+imp;
   }
 
   const nm=Object.keys(porMes).length||1;
-  const ticketPromedioMes = movimientosMesActual ? (totalMesActual / movimientosMesActual) : 0;
   $('dash-mes-actual').textContent='$'+formatearNumero(totalMesActual);
   $('dash-promedio').textContent='$'+formatearNumero(total/nm);
   $('dash-fijos').textContent=total>0?Math.round(fijos/total*100)+'%':'0%';
-  $('dash-movimientos').textContent=String(movimientosMesActual);
-  $('dash-ticket').textContent='$'+formatearNumero(ticketPromedioMes);
+  $('dash-count').textContent=allData.length;
 
   const ms=Object.keys(porMes).sort();
   destroyChart('evolucion');
