@@ -432,24 +432,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
         </label>
         <div class="flex flex-col md:flex-row gap-3 pt-2">
           <button type="button" onclick="cargarDatos()" class="px-6 py-2 bg-slate-600 text-white rounded-lg"><i class="fas fa-sync mr-2"></i>Recargar</button>
+          <button type="button" onclick="exportarCSV()" class="px-6 py-2 bg-emerald-600 text-white rounded-lg"><i class="fas fa-download mr-2"></i>CSV</button>
           <button type="button" onclick="borrarConfig()" class="px-6 py-2 bg-red-100 text-red-700 rounded-lg"><i class="fas fa-trash mr-2"></i>Borrar Config</button>
-        </div>
-        <div class="p-4 rounded-lg border" style="border-color:var(--border-solid);background:var(--kpi-bg)">
-          <div class="mb-3">
-            <span class="font-medium" style="color:var(--text)">Respaldo y exportación</span>
-            <p class="text-xs mt-1" style="color:var(--text3)">Descargá una copia de seguridad en JSON o exportá todos los movimientos en CSV.</p>
-          </div>
-          <div class="flex flex-col md:flex-row gap-3">
-            <button type="button" onclick="exportarBackupJSON()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg"><i class="fas fa-box-archive mr-2"></i>Backup JSON</button>
-            <button type="button" onclick="exportarCSV()" class="px-6 py-2 bg-emerald-600 text-white rounded-lg"><i class="fas fa-file-csv mr-2"></i>Exportar CSV</button>
-          </div>
         </div>
         <div class="flex items-center justify-between p-4 rounded-lg border" style="border-color:var(--border-solid);background:var(--kpi-bg)">
           <div>
             <span class="font-medium" style="color:var(--text)">Versión de la app</span>
             <p class="text-xs" style="color:var(--text3)">Control visual de la versión publicada</p>
           </div>
-          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.1</span>
+          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.0</span>
         </div>
         <div class="flex items-center justify-between p-4 rounded-lg border" style="border-color:var(--border-solid);background:var(--kpi-bg)">
           <div><span class="font-medium" style="color:var(--text)">Modo oscuro</span><p class="text-xs" style="color:var(--text3)">Cambia la apariencia de la app</p></div>
@@ -726,20 +717,10 @@ document.addEventListener('touchend', async () => {
   _ptr.pulling = false;
 });
 
-function descargarArchivo(nombre, contenido, mimeType) {
-  const blob = new Blob([contenido], { type: mimeType });
-  const link = document.createElement('a');
-  const objectUrl = URL.createObjectURL(blob);
-  link.href = objectUrl;
-  link.download = nombre;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-}
-
 function descargarCSV(nombre, contenido) {
-  descargarArchivo(nombre, contenido, 'text/csv;charset=utf-8');
+  const blob = new Blob([contenido], { type: 'text/csv' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob); link.download = nombre; link.click();
 }
 
 /* ========================================
@@ -1297,33 +1278,7 @@ function editarGasto(id){
   $('edit-indicator').classList.remove('hidden');
   showTab('carga');
 }
-function exportarBackupJSON() {
-  const payload = {
-    app: 'gestion-gastos-pwa',
-    version: APP_VERSION,
-    exportedAt: new Date().toISOString(),
-    recordCount: allData.length,
-    pendingCount: getPendingQueue().length,
-    hojaCache: JSON.parse(localStorage.getItem(STORAGE_KEYS.cacheMeta) || 'null')?.hoja || null,
-    data: allData,
-    pendingQueue: getPendingQueue(),
-    settings: {
-      apiUrl: API_URL || '',
-      rememberToken: localStorage.getItem(STORAGE_KEYS.rememberToken) === '1',
-      darkMode: localStorage.getItem(STORAGE_KEYS.dark) === '1',
-      currentTab: currentTab || 'carga',
-      historyFilters: JSON.parse(localStorage.getItem(STORAGE_KEYS.historyFilters) || '{}')
-    }
-  };
-
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-  descargarArchivo(`gastos-backup-${stamp}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
-  toast('Backup JSON descargado');
-}
-
-function exportarCSV(){let csv='Fecha,Centro,Tipo,Concepto,Metodo,Importe,ID
-';for(const g of allData)csv+=[csvEscape(g.Fecha),csvEscape(g.Centro),csvEscape(g.Tipo),csvEscape(g.Concepto),csvEscape(g.Metodo),csvEscape(g.Importe||0),csvEscape(g.ID)].join(',')+'
-';descargarCSV('gastos.csv',csv);toast('CSV descargado');}
+function exportarCSV(){let csv='Fecha,Centro,Tipo,Concepto,Metodo,Importe,ID\n';for(const g of allData)csv+=[csvEscape(g.Fecha),csvEscape(g.Centro),csvEscape(g.Tipo),csvEscape(g.Concepto),csvEscape(g.Metodo),csvEscape(g.Importe||0),csvEscape(g.ID)].join(',')+'\n';descargarCSV('gastos.csv',csv);}
 
 /* ========================================
    DASHBOARD
