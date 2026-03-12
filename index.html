@@ -360,7 +360,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="glass-panel rounded-2xl p-6"><h3 class="font-bold mb-4">Evolución Mensual</h3><canvas id="chart-evolucion" height="250"></canvas></div>
-      <div class="glass-panel rounded-2xl p-6"><h3 class="font-bold mb-2">Por Centro de Gasto</h3><p class="text-xs text-slate-500 mb-4">Participación sobre gastos históricos totales.</p><div class="max-w-md mx-auto"><canvas id="chart-centros" height="250"></canvas></div></div>
+      <div class="glass-panel rounded-2xl p-6"><h3 class="font-bold mb-2">Por Centro de Gasto</h3><p class="text-xs text-slate-500 mb-4">Porcentaje calculado sobre los gastos históricos totales.</p><canvas id="chart-centros" height="250"></canvas></div>
       <div class="glass-panel rounded-2xl p-6 lg:col-span-2">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <h3 class="font-bold">Evolución Histórica por Centro de Gasto</h3>
@@ -1323,14 +1323,13 @@ function renderDashboard() {
   destroyChart('evolucion');
   charts.evolucion=new Chart($('chart-evolucion'),{type:'bar',data:{labels:ms,datasets:[{label:'Gasto mensual',data:ms.map(m=>porMes[m]),backgroundColor:'rgba(37,99,235,.75)',borderColor:'#2563eb',borderWidth:1,borderRadius:6,maxBarThickness:42}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$'+(v/1e6).toFixed(1)+'M'}}}}});
 
-  const centroEntries = Object.entries(porCentro).sort((a,b)=>b[1]-a[1]);
-  const topCentros = centroEntries.slice(0,6);
-  const otrosCentros = centroEntries.slice(6).reduce((s, c) => s + c[1], 0);
-  const centrosChartData = topCentros.slice();
-  if (otrosCentros > 0) centrosChartData.push(['Otros', otrosCentros]);
-  const centroColors = ['rgba(37,99,235,.85)','rgba(16,185,129,.85)','rgba(245,158,11,.85)','rgba(239,68,68,.85)','rgba(139,92,246,.85)','rgba(236,72,153,.85)','rgba(100,116,139,.85)'];
+  const centrosOrdenados=Object.entries(porCentro).sort((a,b)=>b[1]-a[1]);
+  const topCentros=centrosOrdenados.slice(0,6);
+  const restoCentros=centrosOrdenados.slice(6).reduce((s,c)=>s+c[1],0);
+  const donutCentros=topCentros.concat(restoCentros>0 ? [['Otros',restoCentros]] : []);
+  const coloresCentros=['rgba(37,99,235,.85)','rgba(16,185,129,.85)','rgba(245,158,11,.85)','rgba(239,68,68,.85)','rgba(139,92,246,.85)','rgba(236,72,153,.85)','rgba(100,116,139,.75)'];
   destroyChart('centros');
-  charts.centros=new Chart($('chart-centros'),{type:'doughnut',data:{labels:centrosChartData.map(c=>c[0]),datasets:[{data:centrosChartData.map(c=>c[1]),backgroundColor:centroColors.slice(0,centrosChartData.length),borderColor:document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',borderWidth:3,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,usePointStyle:true,padding:14}},tooltip:{callbacks:{label:(ctx)=>{const value=centrosChartData[ctx.dataIndex][1]||0; const pct=((value/(total||1))*100); return `${ctx.label}: ${pct.toFixed(1)}% · $${formatearNumero(value)}`;}}}}});
+  charts.centros=new Chart($('chart-centros'),{type:'doughnut',data:{labels:donutCentros.map(c=>c[0]),datasets:[{data:donutCentros.map(c=>c[1]),backgroundColor:coloresCentros.slice(0,donutCentros.length),borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,cutout:'58%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:(ctx)=>{const valor=donutCentros[ctx.dataIndex][1]||0;const pct=((valor/(total||1))*100);return `${ctx.label}: ${pct.toFixed(1)}% · $${formatearNumero(valor)}`;}}}}});
 
   const centros=uniqueSorted(allData.map(g=>g.Centro));
   $('evolucion-centro').innerHTML='<option value="">Seleccionar centro...</option>'+centros.map(c=>`<option value="${String(c).replace(/"/g,'&quot;')}">${c}</option>`).join('');
