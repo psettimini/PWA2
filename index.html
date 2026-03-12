@@ -360,13 +360,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="glass-panel rounded-2xl p-6"><h3 class="font-bold mb-4">Evolución Mensual</h3><canvas id="chart-evolucion" height="250"></canvas></div>
-      <div class="glass-panel rounded-2xl p-6"><h3 class="font-bold mb-4">Por Centro de Gasto</h3><canvas id="chart-centros" height="250"></canvas></div>
+      <div class="glass-panel rounded-2xl p-6"><h3 class="font-bold mb-2">Por Centro de Gasto</h3><p class="text-xs text-slate-500 mb-4">Porcentaje calculado sobre los gastos históricos totales.</p><canvas id="chart-centros" height="250"></canvas></div>
+      <div class="glass-panel rounded-2xl p-6 lg:col-span-2">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+          <h3 class="font-bold">Evolución Histórica por Centro de Gasto</h3>
+          <div class="flex gap-2 w-full md:w-auto">
+            <select id="evolucion-centro" onchange="renderEvolucionCentro()" class="px-4 py-2 rounded-lg border border-slate-300 text-sm flex-1 md:flex-none"><option value="">Seleccionar centro...</option></select>
+            <button type="button" onclick="renderEvolucionCentro()" class="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><i class="fas fa-chart-bar"></i></button>
+          </div>
+        </div>
+        <canvas id="chart-evolucion-centro" height="250" style="display:none"></canvas>
+        <div id="evolucion-centro-stats" class="mt-4 grid grid-cols-3 gap-4 text-center text-sm"></div>
+      </div>
       <div class="glass-panel rounded-2xl p-6 lg:col-span-2">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <h3 class="font-bold">Evolución de Concepto</h3>
           <div class="flex gap-2 w-full md:w-auto">
             <select id="evolucion-concepto" onchange="renderEvolucionConcepto()" class="px-4 py-2 rounded-lg border border-slate-300 text-sm flex-1 md:flex-none"><option value="">Seleccionar...</option></select>
-            <button type="button" onclick="renderEvolucionConcepto()" class="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><i class="fas fa-chart-line"></i></button>
+            <button type="button" onclick="renderEvolucionConcepto()" class="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><i class="fas fa-chart-bar"></i></button>
           </div>
         </div>
         <canvas id="chart-evolucion-concepto" height="250"></canvas>
@@ -441,7 +452,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
             <span class="font-medium" style="color:var(--text)">Versión de la app</span>
             <p class="text-xs" style="color:var(--text3)">Control visual de la versión publicada</p>
           </div>
-          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.3</span>
+          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.4</span>
         </div>
         <div class="flex items-center justify-between p-4 rounded-lg border" style="border-color:var(--border-solid);background:var(--kpi-bg)">
           <div><span class="font-medium" style="color:var(--text)">Modo oscuro</span><p class="text-xs" style="color:var(--text3)">Cambia la apariencia de la app</p></div>
@@ -839,7 +850,7 @@ function toggleDarkMode() {
   if (!$('section-comparar')?.classList.contains('hidden')) renderComparar();
 }
 
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.4';
 
 /* ========================================
    INIT
@@ -1310,14 +1321,29 @@ function renderDashboard() {
 
   const ms=Object.keys(porMes).sort();
   destroyChart('evolucion');
-  charts.evolucion=new Chart($('chart-evolucion'),{type:'line',data:{labels:ms,datasets:[{data:ms.map(m=>porMes[m]),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',fill:true,tension:.4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$'+(v/1e6).toFixed(1)+'M'}}}}});
+  charts.evolucion=new Chart($('chart-evolucion'),{type:'bar',data:{labels:ms,datasets:[{label:'Gasto mensual',data:ms.map(m=>porMes[m]),backgroundColor:'rgba(37,99,235,.75)',borderColor:'#2563eb',borderWidth:1,borderRadius:6,maxBarThickness:42}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$'+(v/1e6).toFixed(1)+'M'}}}}});
 
   const tc=Object.entries(porCentro).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const totalCentros = tc.reduce((s, c) => s + c[1], 0) || total || 1;
   destroyChart('centros');
-  charts.centros=new Chart($('chart-centros'),{type:'doughnut',data:{labels:tc.map(c=>c[0]),datasets:[{data:tc.map(c=>c[1]),backgroundColor:['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16']}]},options:{responsive:true,plugins:{legend:{position:'right'}}}});
+  charts.centros=new Chart($('chart-centros'),{type:'bar',data:{labels:tc.map(c=>c[0]),datasets:[{label:'% del histórico total',data:tc.map(c=>((c[1]/(total||1))*100)),backgroundColor:['rgba(37,99,235,.8)','rgba(16,185,129,.8)','rgba(245,158,11,.8)','rgba(239,68,68,.8)','rgba(139,92,246,.8)','rgba(236,72,153,.8)','rgba(6,182,212,.8)','rgba(132,204,22,.8)'],borderRadius:6,maxBarThickness:40}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:(ctx)=>`${ctx.parsed.y.toFixed(1)}% · $${formatearNumero(tc[ctx.dataIndex][1])}`}}},scales:{y:{ticks:{callback:v=>v+'%'},suggestedMax:100}}}});
+
+  const centros=uniqueSorted(allData.map(g=>g.Centro));
+  $('evolucion-centro').innerHTML='<option value="">Seleccionar centro...</option>'+centros.map(c=>`<option value="${String(c).replace(/"/g,'&quot;')}">${c}</option>`).join('');
 
   const conceptos=uniqueSorted(allData.map(g=>g.Concepto));
   $('evolucion-concepto').innerHTML='<option value="">Seleccionar...</option>'+conceptos.map(c=>`<option value="${String(c).replace(/"/g,'&quot;')}">${c}</option>`).join('');
+}
+
+function renderEvolucionCentro() {
+  const c=$('evolucion-centro')?.value,cv=$('chart-evolucion-centro');if(!cv)return;
+  if(!c){destroyChart('evolucionCentro');cv.style.display='none';$('evolucion-centro-stats').innerHTML='';return;}
+  cv.style.display='block';
+  const d=allData.filter(g=>g.Centro===c),pm=aggregateBy(d,g=>getMesKey(g.Fecha)||'?'),ms=Object.keys(pm).sort(),vs=ms.map(m=>pm[m]);
+  const t=vs.reduce((a,b)=>a+b,0),avg=vs.length?t/vs.length:0,last=vs.length?vs[vs.length-1]:0;
+  $('evolucion-centro-stats').innerHTML=`<div class="bg-blue-50 rounded p-2"><div class="font-bold text-blue-600">$${formatearNumero(t)}</div><div class="text-xs">Total histórico</div></div><div class="bg-emerald-50 rounded p-2"><div class="font-bold text-emerald-600">$${formatearNumero(avg)}</div><div class="text-xs">Promedio mensual</div></div><div class="bg-purple-50 rounded p-2"><div class="font-bold text-purple-600">$${formatearNumero(last)}</div><div class="text-xs">Último mes</div></div>`;
+  destroyChart('evolucionCentro');
+  charts.evolucionCentro=new Chart(cv,{type:'bar',data:{labels:ms,datasets:[{label:c.substring(0,24),data:vs,backgroundColor:'rgba(16,185,129,.75)',borderColor:'#10b981',borderWidth:1,borderRadius:6,maxBarThickness:40}]},options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{ticks:{callback:v=>'$'+(v/1e3).toFixed(0)+'k'}}}}});
 }
 
 function renderEvolucionConcepto() {
@@ -1328,7 +1354,7 @@ function renderEvolucionConcepto() {
   const t=vs.reduce((a,b)=>a+b,0),avg=vs.length?t/vs.length:0;
   $('evolucion-stats').innerHTML=`<div class="bg-blue-50 rounded p-2"><div class="font-bold text-blue-600">$${formatearNumero(t)}</div><div class="text-xs">Total</div></div><div class="bg-emerald-50 rounded p-2"><div class="font-bold text-emerald-600">$${formatearNumero(avg)}</div><div class="text-xs">Promedio</div></div><div class="bg-purple-50 rounded p-2"><div class="font-bold text-purple-600">${vs.length}</div><div class="text-xs">Meses</div></div>`;
   destroyChart('evolucionConcepto');
-  charts.evolucionConcepto=new Chart(cv,{type:'line',data:{labels:ms,datasets:[{label:c.substring(0,20),data:vs,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,.1)',fill:true,tension:.4}]},options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{ticks:{callback:v=>'$'+(v/1e3).toFixed(0)+'k'}}}}});
+  charts.evolucionConcepto=new Chart(cv,{type:'bar',data:{labels:ms,datasets:[{label:c.substring(0,20),data:vs,backgroundColor:'rgba(139,92,246,.75)',borderColor:'#8b5cf6',borderWidth:1,borderRadius:6,maxBarThickness:40}]},options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{ticks:{callback:v=>'$'+(v/1e3).toFixed(0)+'k'}}}}});
 }
 
 /* ========================================
