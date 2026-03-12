@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-title" content="Gastos">
   <meta name="theme-color" content="#ffffff">
   <title>Gestión de Gastos</title>
-  <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -235,17 +235,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
   </div>
 </div>
 
-
-<div id="update-banner" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-2rem)]">
-  <div class="glass-panel rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
-    <div class="text-sm">
-      <div class="font-semibold">Hay una nueva versión</div>
-      <div class="text-slate-500">Actualiza para usar la última versión.</div>
-    </div>
-    <button type="button" onclick="applyAppUpdate()" class="px-3 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold">Actualizar</button>
-  </div>
-</div>
-
 <div class="main-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
   <!-- ==================== CARGA ==================== -->
@@ -445,6 +434,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
           <button type="button" onclick="cargarDatos()" class="px-6 py-2 bg-slate-600 text-white rounded-lg"><i class="fas fa-sync mr-2"></i>Recargar</button>
           <button type="button" onclick="exportarCSV()" class="px-6 py-2 bg-emerald-600 text-white rounded-lg"><i class="fas fa-download mr-2"></i>CSV</button>
           <button type="button" onclick="borrarConfig()" class="px-6 py-2 bg-red-100 text-red-700 rounded-lg"><i class="fas fa-trash mr-2"></i>Borrar Config</button>
+        </div>
+        <div class="flex items-center justify-between p-4 rounded-lg border" style="border-color:var(--border-solid);background:var(--kpi-bg)">
+          <div>
+            <span class="font-medium" style="color:var(--text)">Versión de la app</span>
+            <p class="text-xs" style="color:var(--text3)">Control visual de la versión publicada</p>
+          </div>
+          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.0</span>
         </div>
         <div class="flex items-center justify-between p-4 rounded-lg border" style="border-color:var(--border-solid);background:var(--kpi-bg)">
           <div><span class="font-medium" style="color:var(--text)">Modo oscuro</span><p class="text-xs" style="color:var(--text3)">Cambia la apariencia de la app</p></div>
@@ -721,47 +717,6 @@ document.addEventListener('touchend', async () => {
   _ptr.pulling = false;
 });
 
-
-let pendingServiceWorker = null;
-
-function showUpdateBanner(worker) {
-  pendingServiceWorker = worker || null;
-  $('update-banner')?.classList.remove('hidden');
-}
-
-function hideUpdateBanner() {
-  $('update-banner')?.classList.add('hidden');
-}
-
-function applyAppUpdate() {
-  if (pendingServiceWorker) {
-    pendingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
-  } else {
-    location.reload();
-  }
-}
-
-function initServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js').then((registration) => {
-    if (registration.waiting) showUpdateBanner(registration.waiting);
-
-    registration.addEventListener('updatefound', () => {
-      const newWorker = registration.installing;
-      if (!newWorker) return;
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          showUpdateBanner(newWorker);
-        }
-      });
-    });
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
-    });
-  }).catch(() => {});
-}
-
 function descargarCSV(nombre, contenido) {
   const blob = new Blob([contenido], { type: 'text/csv' });
   const link = document.createElement('a');
@@ -883,6 +838,8 @@ function toggleDarkMode() {
   if (!$('section-comparar')?.classList.contains('hidden')) renderComparar();
 }
 
+const APP_VERSION = '1.0.0';
+
 /* ========================================
    INIT
 ======================================== */
@@ -892,9 +849,11 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePendingBadge();
   updateNetworkStatus(navigator.onLine ? 'En línea' : 'Sin conexión', navigator.onLine ? 'ok' : 'warn');
   if ($('fecha')) $('fecha').valueAsDate = new Date();
+  const appVersionEl = $('app-version');
+  if (appVersionEl) appVersionEl.textContent = `Versión ${APP_VERSION}`;
   checkSetup();
   showTab(currentTab);
-  if ('serviceWorker' in navigator) initServiceWorker();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   window.addEventListener('online', () => { updateNetworkStatus('En línea', 'ok'); syncPendingQueue(true); });
   window.addEventListener('offline', () => { updateNetworkStatus('Sin conexión', 'warn'); });
 });
