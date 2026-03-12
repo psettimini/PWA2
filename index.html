@@ -440,7 +440,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
             <span class="font-medium" style="color:var(--text)">Versión de la app</span>
             <p class="text-xs" style="color:var(--text3)">Control visual de la versión publicada</p>
           </div>
-          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.0</span>
+          <span id="app-version" class="text-sm font-semibold px-3 py-1 rounded-full" style="background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--pill-text)">Versión 1.0.3</span>
         </div>
         <div class="flex items-center justify-between p-4 rounded-lg border" style="border-color:var(--border-solid);background:var(--kpi-bg)">
           <div><span class="font-medium" style="color:var(--text)">Modo oscuro</span><p class="text-xs" style="color:var(--text3)">Cambia la apariencia de la app</p></div>
@@ -838,7 +838,7 @@ function toggleDarkMode() {
   if (!$('section-comparar')?.classList.contains('hidden')) renderComparar();
 }
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.3';
 
 /* ========================================
    INIT
@@ -1287,7 +1287,7 @@ function renderDashboard() {
   let total=0, fijos=0; const porMes=Object.create(null), porCentro=Object.create(null);
   const hoy = new Date();
   const mesActualKey = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
-  let totalMesActual = 0;
+  let totalMesActual = 0, movimientosMesActual = 0;
 
   for(const g of allData){
     const imp=safeNumber(g.Importe);
@@ -1295,7 +1295,7 @@ function renderDashboard() {
     if(g.Tipo==='F')fijos+=imp;
     const m=getMesKey(g.Fecha)||'?';
     porMes[m]=(porMes[m]||0)+imp;
-    if(m===mesActualKey) totalMesActual+=imp;
+    if(m===mesActualKey){ totalMesActual+=imp; movimientosMesActual++; }
     const c=g.Centro||'?';
     porCentro[c]=(porCentro[c]||0)+imp;
   }
@@ -1304,7 +1304,8 @@ function renderDashboard() {
   $('dash-mes-actual').textContent='$'+formatearNumero(totalMesActual);
   $('dash-promedio').textContent='$'+formatearNumero(total/nm);
   $('dash-fijos').textContent=total>0?Math.round(fijos/total*100)+'%':'0%';
-  $('dash-count').textContent=allData.length;
+  $('dash-movimientos').textContent=movimientosMesActual;
+  $('dash-ticket-promedio').textContent='$'+formatearNumero(movimientosMesActual>0 ? totalMesActual/movimientosMesActual : 0);
 
   const ms=Object.keys(porMes).sort();
   destroyChart('evolucion');
