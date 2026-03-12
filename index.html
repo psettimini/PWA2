@@ -352,7 +352,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
   <!-- ==================== DASHBOARD ==================== -->
   <div id="section-dashboard" class="hidden fade-in space-y-6">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-blue-600 to-blue-700 text-white"><p class="text-blue-100 text-xs">Total Histórico</p><h3 class="text-xl md:text-3xl font-bold" id="dash-total">$0</h3></div>
+      <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-blue-600 to-blue-700 text-white"><p class="text-blue-100 text-xs">Mes Actual</p><h3 class="text-xl md:text-3xl font-bold" id="dash-mes-actual">$0</h3></div>
       <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"><p class="text-emerald-100 text-xs">Promedio Mensual</p><h3 class="text-xl md:text-3xl font-bold" id="dash-promedio">$0</h3></div>
       <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white"><p class="text-purple-100 text-xs">Gastos Fijos</p><h3 class="text-xl md:text-3xl font-bold" id="dash-fijos">0%</h3></div>
       <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white"><p class="text-amber-100 text-xs">Transacciones</p><h3 class="text-xl md:text-3xl font-bold" id="dash-count">0</h3></div>
@@ -1285,9 +1285,26 @@ function exportarCSV(){let csv='Fecha,Centro,Tipo,Concepto,Metodo,Importe,ID\n';
 ======================================== */
 function renderDashboard() {
   let total=0, fijos=0; const porMes=Object.create(null), porCentro=Object.create(null);
-  for(const g of allData){const imp=safeNumber(g.Importe);total+=imp;if(g.Tipo==='F')fijos+=imp;const m=getMesKey(g.Fecha)||'?';porMes[m]=(porMes[m]||0)+imp;const c=g.Centro||'?';porCentro[c]=(porCentro[c]||0)+imp;}
+  const hoy = new Date();
+  const mesActualKey = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  let totalMesActual = 0;
+
+  for(const g of allData){
+    const imp=safeNumber(g.Importe);
+    total+=imp;
+    if(g.Tipo==='F')fijos+=imp;
+    const m=getMesKey(g.Fecha)||'?';
+    porMes[m]=(porMes[m]||0)+imp;
+    if(m===mesActualKey) totalMesActual+=imp;
+    const c=g.Centro||'?';
+    porCentro[c]=(porCentro[c]||0)+imp;
+  }
+
   const nm=Object.keys(porMes).length||1;
-  $('dash-total').textContent='$'+formatearNumero(total);$('dash-promedio').textContent='$'+formatearNumero(total/nm);$('dash-fijos').textContent=total>0?Math.round(fijos/total*100)+'%':'0%';$('dash-count').textContent=allData.length;
+  $('dash-mes-actual').textContent='$'+formatearNumero(totalMesActual);
+  $('dash-promedio').textContent='$'+formatearNumero(total/nm);
+  $('dash-fijos').textContent=total>0?Math.round(fijos/total*100)+'%':'0%';
+  $('dash-count').textContent=allData.length;
 
   const ms=Object.keys(porMes).sort();
   destroyChart('evolucion');
