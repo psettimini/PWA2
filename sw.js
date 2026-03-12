@@ -1,13 +1,13 @@
-const CACHE_VERSION = 'gastos-pwa-v2';
+const CACHE_VERSION = 'gastos-pwa-v3';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const APP_SHELL = [
   './',
-  'index.html',
-  'manifest.json',
-  'icon-192.png',
-  'icon-512.png',
-  'apple-touch-icon.png'
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -45,6 +45,8 @@ async function networkFirst(req) {
   } catch (err) {
     const cached = await cache.match(req, { ignoreSearch: false });
     if (cached) return cached;
+    const appShell = await caches.match('./');
+    if (req.mode === 'navigate' && appShell) return appShell;
     throw err;
   }
 }
