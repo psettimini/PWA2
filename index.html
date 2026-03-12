@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-title" content="Gastos">
   <meta name="theme-color" content="#ffffff">
   <title>Gestión de Gastos</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -232,6 +232,17 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
         <i class="fas fa-rotate mr-1"></i>Sincronizar
       </button>
     </div>
+  </div>
+</div>
+
+
+<div id="update-banner" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-2rem)]">
+  <div class="glass-panel rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+    <div class="text-sm">
+      <div class="font-semibold">Hay una nueva versión</div>
+      <div class="text-slate-500">Actualiza para usar la última versión.</div>
+    </div>
+    <button type="button" onclick="applyAppUpdate()" class="px-3 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold">Actualizar</button>
   </div>
 </div>
 
@@ -710,6 +721,47 @@ document.addEventListener('touchend', async () => {
   _ptr.pulling = false;
 });
 
+
+let pendingServiceWorker = null;
+
+function showUpdateBanner(worker) {
+  pendingServiceWorker = worker || null;
+  $('update-banner')?.classList.remove('hidden');
+}
+
+function hideUpdateBanner() {
+  $('update-banner')?.classList.add('hidden');
+}
+
+function applyAppUpdate() {
+  if (pendingServiceWorker) {
+    pendingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+  } else {
+    location.reload();
+  }
+}
+
+function initServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').then((registration) => {
+    if (registration.waiting) showUpdateBanner(registration.waiting);
+
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (!newWorker) return;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner(newWorker);
+        }
+      });
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }).catch(() => {});
+}
+
 function descargarCSV(nombre, contenido) {
   const blob = new Blob([contenido], { type: 'text/csv' });
   const link = document.createElement('a');
@@ -842,7 +894,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('fecha')) $('fecha').valueAsDate = new Date();
   checkSetup();
   showTab(currentTab);
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) initServiceWorker();
   window.addEventListener('online', () => { updateNetworkStatus('En línea', 'ok'); syncPendingQueue(true); });
   window.addEventListener('offline', () => { updateNetworkStatus('Sin conexión', 'warn'); });
 });
